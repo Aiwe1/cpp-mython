@@ -144,27 +144,26 @@ namespace ast {
         auto rhs = rhs_->Execute(closure, context);
 
         {
-            auto n1 = lhs.TryAs<runtime::Number>();
-            auto n2 = rhs.TryAs<runtime::Number>();
-            if (n1 && n2) {
-                return runtime::ObjectHolder::Own<runtime::Number>(n1->GetValue() + n2->GetValue());
+            auto t_lhs = lhs.TryAs<runtime::Number>();
+            auto t_rhs = rhs.TryAs<runtime::Number>();
+            if (t_lhs && t_rhs) {
+                return runtime::ObjectHolder::Own<runtime::Number>(t_lhs->GetValue() + t_rhs->GetValue());
             }
         }
         {
-            auto n1 = lhs.TryAs<runtime::String>();
-            auto n2 = rhs.TryAs<runtime::String>();
-            if (n1 && n2) {
-                return runtime::ObjectHolder::Own<runtime::String>(n1->GetValue() + n2->GetValue());
+            auto t_lhs = lhs.TryAs<runtime::String>();
+            auto t_rhs = rhs.TryAs<runtime::String>();
+            if (t_lhs && t_rhs) {
+                return runtime::ObjectHolder::Own<runtime::String>(t_lhs->GetValue() + t_rhs->GetValue());
             }
         }
         {
-            auto n1 = lhs.TryAs<runtime::ClassInstance>();
-            //auto n2 = rhs.TryAs<runtime::ClassInstance>();
-            if (n1) {
-                if (n1->HasMethod("__add__", 1)) {
+            auto t_lhs = lhs.TryAs<runtime::ClassInstance>();
+            if (t_lhs) {
+                if (t_lhs->HasMethod("__add__", 1)) {
                     vector<ObjectHolder> v;
                     v.push_back(rhs);
-                    return n1->Call("__add__", v, context);
+                    return t_lhs->Call("__add__", v, context);
                 }
             }
         }

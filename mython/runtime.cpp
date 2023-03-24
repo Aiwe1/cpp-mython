@@ -7,6 +7,11 @@
 using namespace std;
 
 namespace runtime {
+    namespace {
+        const string ADD_METHOD = "__add__"s;
+        const string INIT_METHOD = "__init__"s;
+        const string STR_METHOD = "__str__"s;
+    }  // namespace
 
     ObjectHolder::ObjectHolder(std::shared_ptr<Object> data)
         : data_(std::move(data)) {
@@ -73,9 +78,9 @@ namespace runtime {
 
     void ClassInstance::Print(std::ostream& os, Context& context) {
         //
-        if (HasMethod("__str__", 0)) {
+        if (HasMethod(STR_METHOD, 0)) {
             //cls_.GetMethod("__str__")->body->Execute(closure_, context);
-            auto res = Call("__str__", {}, context);
+            auto res = Call(STR_METHOD, {}, context);
             res.Get()->Print(os, context);
         }
         else {
@@ -135,18 +140,14 @@ namespace runtime {
                 }
             }
         }
-        // Заглушка. Реализуйте метод самостоятельно
         return nullptr;
     }
 
     [[nodiscard]] const std::string& Class::GetName() const {
-        // Заглушка. Реализуйте метод самостоятельно.
-        //throw std::runtime_error("Not implemented"s);
         return name_;
     }
 
     void Class::Print(ostream& os, [[maybe_unused]] Context& context) {
-        // Заглушка. Реализуйте метод самостоятельно
         os << "Class " << name_;
     }
 
@@ -164,63 +165,51 @@ namespace runtime {
         }
 
         {
-            auto t1 = lhs.TryAs<Bool>();
-            auto t2 = rhs.TryAs<Bool>();
-            if (t1 && t2) {
-                if (t1->GetValue() == t2->GetValue()) {
+            auto t_lhs = lhs.TryAs<Bool>();
+            auto t_rhs = rhs.TryAs<Bool>();
+            if (t_lhs && t_rhs) {
+                if (t_lhs->GetValue() == t_rhs->GetValue()) {
                     return true;
                 }
                 return false;
             }
         }
         {
-            auto t1 = lhs.TryAs<String>();
-            auto t2 = rhs.TryAs<String>();
-            if (t1 && t2) {
-                if (t1->GetValue() == t2->GetValue()) {
+            auto t_lhs = lhs.TryAs<String>();
+            auto t_rhs = rhs.TryAs<String>();
+            if (t_lhs && t_rhs) {
+                if (t_lhs->GetValue() == t_rhs->GetValue()) {
                     return true;
                 }
                 return false;
             }
         }
         {
-            auto t1 = lhs.TryAs<Number>();
-            auto t2 = rhs.TryAs<Number>();
-            if (t1 && t2) {
-                if (t1->GetValue() == t2->GetValue()) {
+            auto t_lhs = lhs.TryAs<Number>();
+            auto t_rhs = rhs.TryAs<Number>();
+            if (t_lhs && t_rhs) {
+                if (t_lhs->GetValue() == t_rhs->GetValue()) {
                     return true;
                 }
                 return false;
             }
         }
         {
-            auto t1 = lhs.TryAs<ClassInstance>();
-            auto t2 = rhs.TryAs<ClassInstance>();
-            if (t1 && t2) {
-                if (t1->HasMethod("__eq__", 1)) {
+            auto t_lhs = lhs.TryAs<ClassInstance>();
+            auto t_rhs = rhs.TryAs<ClassInstance>();
+            if (t_lhs && t_rhs) {
+                if (t_lhs->HasMethod("__eq__", 1)) {
                     vector<ObjectHolder> v;
                     v.push_back(rhs);
                     //auto asda = t1->Call("__eq__", v, context).TryAs<Bool>();
-                    return t1->Call("__eq__", v, context).TryAs<Bool>()->GetValue();
+                    return t_lhs->Call("__eq__", v, context).TryAs<Bool>()->GetValue();
                 }
             }
         }
         throw std::runtime_error("Cannot compare objects for equality"s);
     }
 
-    /*
-     * Если lhs и rhs - числа, строки или значения bool, функция возвращает результат их сравнения
-     * оператором <.
-     * Если lhs - объект с методом __lt__, возвращает результат вызова lhs.__lt__(rhs),
-     * приведённый к типу bool. В остальных случаях функция выбрасывает исключение runtime_error.
-     *
-     * Параметр context задаёт контекст для выполнения метода __lt__
-     */
     bool Less(const ObjectHolder& lhs, const ObjectHolder& rhs, Context& context) {
-        // Заглушка. Реализуйте функцию самостоятельно
-        //if (lhs.Get() == nullptr && rhs.Get() == nullptr) {
-        //    return true;
-        //}
         if (lhs.Get() == nullptr || rhs.Get() == nullptr) {
             throw std::runtime_error("Cannot compare objects for equality"s);
         }

@@ -76,6 +76,128 @@ namespace parse {
         return os << "Unknown token :("sv;
     }
 
+    void Lexer::ParseOP(std::string& line, size_t& i) {
+        using namespace token_type;
+        if (line[i] == '=' && i + 1 < line.size() && line[i + 1] == '=') {
+            lexem_.emplace_back(Eq());
+            ++i;
+            return;
+        }
+        if (line[i] == '>' && i + 1 < line.size() && line[i + 1] == '=') {
+            lexem_.emplace_back(GreaterOrEq());
+            ++i;
+            return;
+        }
+        if (line[i] == '<' && i + 1 < line.size() && line[i + 1] == '=') {
+            lexem_.emplace_back(LessOrEq());
+            ++i;
+            return;
+        }
+        if (line[i] == '!' && i + 1 < line.size() && line[i + 1] == '=') {
+            lexem_.emplace_back(NotEq());
+            ++i;
+            return;
+        }
+        Char val;
+        val.value = line[i];
+        lexem_.push_back(val);
+    }
+
+    void Lexer::ParseString(std::string& line, size_t& i, char quote) {
+        using namespace token_type;
+        ++i;
+        String val;
+        while (line[i] != quote || line[i - 1] == '\\') {
+            if (line[i] == '\\') {
+                if (line[i + 1] == 't') {
+                    val.value.push_back('\t');
+                    i += 2;
+                    continue;
+                }
+                if (line[i + 1] == 'n') {
+                    val.value.push_back('\n');
+                    i += 2;
+                    continue;
+                }
+                if (line[i + 1] == '\"') {
+                    val.value.push_back('\"');
+                    i += 2;
+                    continue;;
+                }
+                if (line[i + 1] == quote) {
+                    val.value.push_back(quote);
+                    i += 2;
+                    continue;
+                }
+            }
+            val.value.push_back(line[i]);
+            ++i;
+        }
+        lexem_.push_back(val);
+    }
+
+    void Lexer::ParseKeyword(std::string& line, size_t& i) {
+        using namespace token_type;
+        string s;
+        while (i < line.size() && ((line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= 'a' && line[i] <= 'z')
+            || line[i] == '_' || (line[i] >= '0' && line[i] <= '9'))) {
+            s.push_back(line[i]);
+            ++i;
+        }
+        --i;
+        if (s == "class") {
+            lexem_.emplace_back(Class());
+            return;
+        }
+        if (s == "return") {
+            lexem_.emplace_back(Return());
+            return;
+        }
+        if (s == "if") {
+            lexem_.emplace_back(If());
+            return;
+        }
+        if (s == "else") {
+            lexem_.emplace_back(Else());
+            return;
+        }
+        if (s == "def") {
+            lexem_.emplace_back(Def());
+            return;
+        }
+        if (s == "print") {
+            lexem_.emplace_back(Print());
+            return;
+        }
+        if (s == "and") {
+            lexem_.emplace_back(And());
+            return;
+        }
+        if (s == "or") {
+            lexem_.emplace_back(Or());
+            return;
+        }
+        if (s == "not") {
+            lexem_.emplace_back(Not());
+            return;
+        }
+        if (s == "None") {
+            lexem_.emplace_back(None());
+            return;
+        }
+        if (s == "True") {
+            lexem_.emplace_back(True());
+            return;
+        }
+        if (s == "False") {
+            lexem_.emplace_back(False());
+            return;
+        }
+        Id id_;
+        id_.value = s;
+        lexem_.push_back(id_);
+    }
+
     Lexer::Lexer(std::istream& in) {
         using namespace token_type;
         int indent = 0;
@@ -128,156 +250,22 @@ namespace parse {
                 if (line[i] == '.' || line[i] == ',' || line[i] == '(' || line[i] == ')' || line[i] == '+' || line[i] == '-'
                         || line[i] == '=' || line[i] == '>' || line[i] == '<' || line[i] == '*' || line[i] == '/'
                         || line[i] == ':' || line[i] == '!') {
-                    if (line[i] == '=' && i + 1 < line.size() && line[i + 1] == '=') {
-                        lexem_.emplace_back(Eq());
-                        ++i;
-                        continue;
-                    }
-                    if (line[i] == '>' && i + 1 < line.size() && line[i + 1] == '=') {
-                        lexem_.emplace_back(GreaterOrEq());
-                        ++i;
-                        continue;
-                    }
-                    if (line[i] == '<' && i + 1 < line.size() && line[i + 1] == '=') {
-                        lexem_.emplace_back(LessOrEq());
-                        ++i;
-                        continue;
-                    }
-                    if (line[i] == '!' && i + 1 < line.size() && line[i + 1] == '=') {
-                        ++i;
-                        lexem_.emplace_back(NotEq());
-                        continue;
-                    }
-                    Char val;
-                    val.value = line[i];
-                    lexem_.push_back(val);
+
+                    ParseOP(line, i);
                     continue;
                 }
 
-                if (line[i] == '\'') {
-                    String val;
-                    ++i;
-                    while (line[i] != '\'' || line[i - 1] == '\\') {
-                        if (line[i] == '\\') {
-                            if (line[i + 1] == 't') {
-                                val.value.push_back('\t');
-                                i += 2;
-                                continue;
-                            }
-                            if (line[i + 1] == 'n') {
-                                val.value.push_back('\n');
-                                i += 2;
-                                continue;
-                            }
-                            if (line[i + 1] == '\"') {
-                                val.value.push_back('\"');
-                                i += 2;
-                                continue;;
-                            }
-                            if (line[i + 1] == '\'') {
-                                val.value.push_back('\'');
-                                i += 2;
-                                continue;
-                            }
-                        }
-                        val.value.push_back(line[i]);
-                        ++i;
-                    }
-                    lexem_.push_back(val);
+                if (line[i] == '\'') {    
+                    ParseString(line, i, '\'');
                     continue;
                 }
                 if (line[i] == '\"') {
-                    String val;
-                    ++i;
-                    while (line[i] != '\"' || line[i - 1] == '\\') {
-                        if (line[i] == '\\') {
-                            if (line[i + 1] == 't') {
-                                val.value.push_back('\t');
-                                i += 2;
-                                continue;
-                            }
-                            if (line[i + 1] == 'n') {
-                                val.value.push_back('\n');
-                                i += 2;
-                                continue;
-                            }
-                            if (line[i + 1] == '\"') {
-                                val.value.push_back('\"');
-                                i += 2;
-                                continue;;
-                            }
-                            if (line[i + 1] == '\'') {
-                                val.value.push_back('\'');
-                                i += 2;
-                                continue;
-                            }
-                        }
-                        val.value.push_back(line[i]);
-                        ++i;
-                    }
-                    lexem_.push_back(val);
+                    ParseString(line, i, '\"');
                     continue;
                 }
 
                 if ((line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= 'a' && line[i] <= 'z') || line[i] == '_') {
-                    string s;
-                    while (i < line.size() && ((line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= 'a' && line[i] <= 'z') 
-                        || line[i] == '_' || (line[i] >= '0' && line[i] <= '9'))) {
-                        s.push_back(line[i]);
-                        ++i;
-                    }
-                    --i;
-                    if (s == "class") {
-                        lexem_.emplace_back(Class());
-                        continue;
-                    }
-                    if (s == "return") {
-                        lexem_.emplace_back(Return());
-                        continue;
-                    }
-                    if (s == "if") {
-                        lexem_.emplace_back(If());
-                        continue;
-                    }
-                    if (s == "else") {
-                        lexem_.emplace_back(Else());
-                        continue;
-                    }
-                    if (s == "def") {
-                        lexem_.emplace_back(Def());
-                        continue;
-                    }
-                    if (s == "print") {
-                        lexem_.emplace_back(Print());
-                        continue;
-                    }
-                    if (s == "and") {
-                        lexem_.emplace_back(And());
-                        continue;
-                    }
-                    if (s == "or") {
-                        lexem_.emplace_back(Or());
-                        continue;
-                    }
-                    if (s == "not") {
-                        lexem_.emplace_back(Not());
-                        continue;
-                    }
-                    if (s == "None") {
-                        lexem_.emplace_back(None());
-                        continue;
-                    }
-                    if (s == "True") {
-                        lexem_.emplace_back(True());
-                        continue;
-                    }
-                    if (s == "False") {
-                        lexem_.emplace_back(False());
-                        continue;
-                    }
-                    Id id_;
-                    id_.value = s;
-                    lexem_.push_back(id_);
+                    ParseKeyword(line, i);
                     continue;
                 }
 

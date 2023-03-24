@@ -124,7 +124,6 @@ namespace parse {
             else {
                 throw LexerError("Not implemented"s);
             }
-            // Заглушка. Реализуйте метод самостоятельно
         }
 
         // Если следующий токен имеет тип T, метод возвращает ссылку на него.
@@ -132,7 +131,6 @@ namespace parse {
         template <typename T>
         const T& ExpectNext() {
             using namespace std::literals;
-            // Заглушка. Реализуйте метод самостоятельно
             if (NextToken().Is<T>()) {
                 return CurrentToken().As<T>();
             }
@@ -146,7 +144,6 @@ namespace parse {
         template <typename T, typename U>
         void ExpectNext(const U& value) {
             using namespace std::literals;
-            // Заглушка. Реализуйте метод самостоятельно
             if (NextToken().Is<T>()) {
                 if (CurrentToken().As<T>().value != value) {
                     throw LexerError("Not implemented"s);
@@ -156,6 +153,10 @@ namespace parse {
                 throw LexerError("Not implemented"s);
             }
         }
+
+        void ParseOP(std::string& line, size_t& i);
+        void ParseString(std::string& line, size_t& i, char quote);
+        void ParseKeyword(std::string& line, size_t& i);
 
     private:
         std::vector<Token> lexem_;
